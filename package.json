@@ -1,0 +1,20 @@
+{
+  "name": "spoontacular_backend",
+  "version": "1.0.0",
+  "description": "Node.js backend API wrapper for Spoonacular Food API with caching",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["spoonacular", "food", "api", "recipes", "node", "express"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^3.3.2"
+  }
+}
