@@ -299,7 +299,7 @@ app.get("/api/recipe/:id/equipment", async (req, res) => {
 });
 
 // Get recipe price breakdown by ID
-app.get("/api/recipe/:id/priceBreakdown", async (req, res) => {
+app.get("/api/recipe/:id/price", async (req, res) => {
   const recipeId = req.params.id;
   
   if (!recipeId || isNaN(recipeId)) {
@@ -573,6 +573,37 @@ app.get("/api/recipes/guessNutrition", async (req, res) => {
 
 // INGREDIENT ENDPOINTS
 
+// Autocomplete ingredient search
+app.get("/api/ingredients/autocomplete", async (req, res) => {
+  const { query } = req.query;
+  
+  if (!query) {
+    console.error("Autocomplete error: Query parameter is missing."); // Enhanced logging
+    return res.status(400).json({ error: "Query parameter is required" });
+  }
+
+  try {
+    const params = new URLSearchParams({
+      query,
+      number: req.query.number || '10',
+      apiKey: process.env.SPOONACULAR_API_KEY
+    });
+    
+    if (req.query.intolerances) params.append('intolerances', req.query.intolerances);
+
+    const cacheKey = `ingredient_autocomplete_${query.toLowerCase()}`;
+    const url = `${BASE_URL}/food/ingredients/autocomplete?${params}`;
+    
+    console.log(`Forwarding autocomplete request to: ${url}`);
+
+    const result = await fetchWithCache(cacheKey, url);
+    res.json(result);
+  } catch (err) {
+    console.error("Error during ingredient autocomplete:", err.message);
+    res.status(500).json({ error: "Failed to autocomplete ingredients", details: err.message });
+  }
+});
+
 // Search ingredients
 app.get("/api/ingredients/search", async (req, res) => {
   const { query } = req.query;
@@ -603,7 +634,7 @@ app.get("/api/ingredients/search", async (req, res) => {
 });
 
 // Get ingredient information
-app.get("/api/ingredients/:id", async (req, res) => {
+app.get("/api/ingredients/:id/information", async (req, res) => {
   const ingredientId = req.params.id;
   
   if (!ingredientId || isNaN(ingredientId)) {
@@ -614,7 +645,8 @@ app.get("/api/ingredients/:id", async (req, res) => {
     const params = new URLSearchParams({
       apiKey: process.env.SPOONACULAR_API_KEY,
       amount: req.query.amount || '1',
-      unit: req.query.unit || 'serving'
+      unit: req.query.unit || 'serving',
+      locale: req.query.locale || 'en_US'
     });
 
     const cacheKey = `ingredient_${ingredientId}_${params.toString()}`;
@@ -760,33 +792,6 @@ app.post("/api/ingredients/glycemicLoad", async (req, res) => {
   } catch (err) {
     console.error("Error computing glycemic load:", err.message);
     res.status(500).json({ error: "Failed to compute glycemic load", details: err.message });
-  }
-});
-
-// Autocomplete ingredient search
-app.get("/api/ingredients/autocomplete", async (req, res) => {
-  const { query } = req.query;
-  
-  if (!query) {
-    return res.status(400).json({ error: "Query parameter is required" });
-  }
-
-  try {
-    const params = new URLSearchParams({
-      query,
-      number: req.query.number || '10',
-      apiKey: process.env.SPOONACULAR_API_KEY
-    });
-    
-    if (req.query.intolerances) params.append('intolerances', req.query.intolerances);
-
-    const cacheKey = `ingredient_autocomplete_${query.toLowerCase()}`;
-    const url = `${BASE_URL}/food/ingredients/autocomplete?${params}`;
-    const result = await fetchWithCache(cacheKey, url);
-    res.json(result);
-  } catch (err) {
-    console.error("Error autocomplete ingredients:", err.message);
-    res.status(500).json({ error: "Failed to autocomplete ingredients", details: err.message });
   }
 });
 
