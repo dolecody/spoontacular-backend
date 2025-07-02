@@ -28,11 +28,12 @@ app.use(cors({
 // Helper function to make API calls with caching
 async function fetchWithCache(cacheKey, url, cacheDuration = 3600) {
   // Check cache first
-  const cached = cache.get(cacheKey);
-  if (cached) {
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) {
     console.log(`Serving from cache: ${cacheKey}`);
+    // The cached data is already in the correct format
     return {
-      ...cached,
+      ...cachedData,
       fromCache: true,
       timestamp: new Date().toISOString()
     };
@@ -43,22 +44,37 @@ async function fetchWithCache(cacheKey, url, cacheDuration = 3600) {
     const response = await fetch(url);
 
     if (!response.ok) {
+      // It's helpful to log the response body for debugging
+      const errorBody = await response.text();
+      console.error(`API error response body: ${errorBody}`);
       throw new Error(`API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
 
-    // Store in cache
-    cache.set(cacheKey, data, cacheDuration);
+    // Standardize the response format
+    let dataToCache;
+    if (Array.isArray(data)) {
+      // If the response is an array, wrap it in a 'results' object
+      console.log(`Detected array response for ${cacheKey}, wrapping in 'results' object.`);
+      dataToCache = { results: data };
+    } else {
+      // Otherwise, use the object as is
+      dataToCache = data;
+    }
+
+    // Store the standardized object in cache
+    cache.set(cacheKey, dataToCache, cacheDuration);
     console.log(`Cached: ${cacheKey}`);
 
     return {
-      ...data,
+      ...dataToCache,
       fromCache: false,
       timestamp: new Date().toISOString()
     };
 
   } catch (err) {
+    console.error(`Failed to fetch data for ${cacheKey}:`, err.message);
     throw new Error(`Failed to fetch data: ${err.message}`);
   }
 }
