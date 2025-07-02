@@ -68,6 +68,15 @@ app.get("/", (req, res) => {
   res.send("Spoonacular API wrapper is running! 🍽️");
 });
 
+// Debug endpoint to check environment variables
+app.get("/api/debug", (req, res) => {
+  res.json({
+    hasSpoonacularKey: !!process.env.SPOONACULAR_API_KEY,
+    keyLength: process.env.SPOONACULAR_API_KEY ? process.env.SPOONACULAR_API_KEY.length : 0,
+    nodeEnv: process.env.NODE_ENV || 'not set'
+  });
+});
+
 // RECIPE ENDPOINTS
 
 // Search recipes endpoint with caching
